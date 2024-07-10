@@ -1,8 +1,11 @@
+import copy
 import random
 import struct
 from dataclasses import dataclass
 from collections import defaultdict
 import math
+
+import visualization as viz
 
 @dataclass
 class Coord:
@@ -36,22 +39,25 @@ def GetNeighbors(coord):
         Coord(coord.x, coord.y - 1),
     ]
 
-def Cascade(grid, coord, step):
+def Cascade(snapshots, grid, coord, step):
     if WillFall(grid, coord):
         grid[coord.x][coord.y] -= 4
         Record[step] += 1
         for n in GetNeighbors(coord):
             if WithinGrid(grid, n):
                 grid = PlaceGrain(grid, n)
-                return Cascade(grid, n, step)
-    return grid
+                snapshots.append(copy.deepcopy(grid))
+                return Cascade(snapshots, grid, n, step)
+    return snapshots, grid
 
 def Run(grid, steps):
+    snapshots = []
     for step in range(steps):
         coord = RandomCoord(grid)
         grid = PlaceGrain(grid, coord)
-        grid = Cascade(grid, coord, step)
-    return grid
+        snapshots, grid = Cascade(snapshots, grid, coord, step)
+        snapshots.append(copy.deepcopy(grid))
+    return snapshots
 
 def ProcessRecord(rec, threshold):
     totals = defaultdict(int)
@@ -72,16 +78,18 @@ def PowerLawEstimation(logs, powlaw):
         curve.append(math.exp(i * powlaw))
     return curve
 
-MAXHEIGHT = 4
-size = 20
-steps = 10000
+MAXHEIGHT = 8
+size = 10
+steps = 1000
 counter_threshold = 0
 
 Record = { s: 0 for s in range(steps)}
 grid = MakeGrid(size)
-grid = Run(grid, steps)
+snapshots = Run(grid, steps)
 totals = ProcessRecord(Record, counter_threshold)
 print(f'{totals = }')
 logs = MapToLog(totals)
 print(f'{logs = }')
 print(f'{PowerLawEstimation(logs, 1/3) = }')
+
+viz.Video(snapshots, MAXHEIGHT, fps=15, cmap='Blues', filename='results.mp4')
