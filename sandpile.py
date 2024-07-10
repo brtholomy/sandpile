@@ -2,6 +2,7 @@ import random
 import struct
 from dataclasses import dataclass
 from collections import defaultdict
+import math
 
 @dataclass
 class Coord:
@@ -21,26 +22,26 @@ def PlaceGrain(grid, coord):
     return grid
 
 def WillFall(grid, coord):
-    return grid[coord.x][coord.y] > MAXN
+    return grid[coord.x][coord.y] > MAXHEIGHT
 
-def NumOrNone(n, size):
-    return n if n < size else None
-
-def GetNeighbors(grid, coord):
+def WithinGrid(grid, coord):
     size = len(grid)
+    return coord.x < size and coord.y < size
+
+def GetNeighbors(coord):
     return [
-        Coord(NumOrNone(coord.x + 1, size), coord.y),
-        Coord(coord.x, NumOrNone(coord.y + 1, size)),
-        Coord(NumOrNone(coord.x - 1, size), coord.y),
-        Coord(coord.x, NumOrNone(coord.y - 1, size)),
+        Coord(coord.x + 1, coord.y),
+        Coord(coord.x, coord.y + 1),
+        Coord(coord.x - 1, coord.y),
+        Coord(coord.x, coord.y - 1),
     ]
 
 def Cascade(grid, coord, step):
     if WillFall(grid, coord):
         grid[coord.x][coord.y] -= 4
         Record[step] += 1
-        for n in GetNeighbors(grid, coord):
-            if n.x and n.y:
+        for n in GetNeighbors(coord):
+            if WithinGrid(grid, n):
                 grid = PlaceGrain(grid, n)
                 return Cascade(grid, n, step)
     return grid
@@ -54,16 +55,33 @@ def Run(grid, steps):
 
 def ProcessRecord(rec, threshold):
     totals = defaultdict(int)
-    for k,v in rec.items():
-        if v > threshold:
-            totals[v] += 1
+    for step, cascades in rec.items():
+        if cascades > threshold:
+            totals[cascades] += 1
     return totals
 
-MAXN = 4
+def MapToLog(totals):
+    logs = {}
+    for cascades, num in totals.items():
+        logs[math.log(cascades)] = math.log(num)
+    return logs
+
+def PowerLawEstimation(logs, powlaw):
+    curve = []
+    for i in range(len(logs)):
+        curve.append(math.exp(i * powlaw))
+    return curve
+
+MAXHEIGHT = 4
 size = 20
 steps = 10000
+counter_threshold = 0
+
 Record = { s: 0 for s in range(steps)}
 grid = MakeGrid(size)
 grid = Run(grid, steps)
-totals = ProcessRecord(Record, 0)
+totals = ProcessRecord(Record, counter_threshold)
 print(f'{totals = }')
+logs = MapToLog(totals)
+print(f'{logs = }')
+print(f'{PowerLawEstimation(logs, 1/3) = }')
