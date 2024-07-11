@@ -48,9 +48,21 @@ def GetNeighbors(coord):
         Coord(coord.x, coord.y - 1),
     ]
 
+def GetNeighbors8(coord):
+    return [
+        Coord(coord.x + 1, coord.y),
+        Coord(coord.x, coord.y + 1),
+        Coord(coord.x + 1, coord.y + 1),
+        Coord(coord.x - 1, coord.y),
+        Coord(coord.x, coord.y - 1),
+        Coord(coord.x - 1, coord.y - 1),
+        Coord(coord.x + 1, coord.y - 1),
+        Coord(coord.x - 1, coord.y + 1),
+    ]
+
 def Cascade(snapshots, grid, coord, step):
     if WillFall(grid, coord):
-        grid[coord.x][coord.y] -= 4
+        grid[coord.x][coord.y] -= 8
         Record[step] += 1
         for n in GetNeighbors(coord):
             if WithinGrid(grid, n):
