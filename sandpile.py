@@ -20,6 +20,15 @@ def RandomCoord(grid):
     random.seed()
     return Coord(random.randint(0, size), random.randint(0, size))
 
+def CenterWeightedCoord(grid):
+    size = len(grid) - 1
+    random.seed()
+    sample = list(range(size))
+    # weight the center
+    weights = [1 / abs(i - size/2) for i in range(size)]
+    ch = random.choices(sample, weights=weights, k=2)
+    return Coord(ch[0], ch[1])
+
 def PlaceGrain(grid, coord):
     grid[coord.x][coord.y] += 1
     return grid
@@ -53,7 +62,7 @@ def Cascade(snapshots, grid, coord, step):
 def Run(grid, steps):
     snapshots = []
     for step in range(steps):
-        coord = RandomCoord(grid)
+        coord = CenterWeightedCoord(grid)
         grid = PlaceGrain(grid, coord)
         snapshots, grid = Cascade(snapshots, grid, coord, step)
         snapshots.append(copy.deepcopy(grid))
