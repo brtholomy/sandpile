@@ -96,7 +96,7 @@ def ProcessRecord(rec, threshold):
 def MapToLog(totals):
     logs = {}
     for cascades, num in totals.items():
-        logs[math.log(cascades)] = math.log(num)
+        logs[cascades] = math.log(num)
     return logs
 
 def PowerLawEstimation(logs, powlaw):
@@ -145,7 +145,13 @@ def PowerLawEstimation(logs, powlaw):
     default=False,
     help='Make a plot of the totals'
 )
-def main(height, size, iters, counter_threshold, video, plot):
+@click.option(
+    '--logs', '-l',
+    is_flag=True,
+    default=False,
+    help='Make a plot of the logarithmic reduction'
+)
+def main(height, size, iters, counter_threshold, video, plot, logs):
     grid = MakeGrid(size)
     snapshots, record = Run(grid, height, iters)
     totals = ProcessRecord(record, counter_threshold)
@@ -159,6 +165,9 @@ def main(height, size, iters, counter_threshold, video, plot):
 
     if plot:
         viz.PlotTotals(totals)
+
+    if logs:
+        viz.PlotTotals(logs, 'line')
 
 if __name__ == "__main__":
     main()

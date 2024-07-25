@@ -15,8 +15,11 @@ def PlotShow(plot=None):
     input("hit [enter] to end.")
     plt.close("all")
 
-def PlotTotals(totals):
-    plt.bar(totals.keys(), totals.values())
+def PlotTotals(totals, kind=None):
+    if kind == 'line':
+        plt.plot(totals.keys(), totals.values())
+    else:
+        plt.bar(totals.keys(), totals.values())
     PlotShow()
 
 def Video(snapshots, maxh, fps=1, cmap='Blues', filename='video.mp4'):
