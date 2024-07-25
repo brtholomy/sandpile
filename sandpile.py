@@ -140,18 +140,18 @@ def PowerLawEstimation(logs, powlaw):
     help='Record a video of the simulation progression'
 )
 @click.option(
-    '--plot', '-p',
+    '--plot_totals', '-t',
     is_flag=True,
     default=False,
     help='Make a plot of the totals'
 )
 @click.option(
-    '--logs', '-l',
+    '--plot_logs', '-l',
     is_flag=True,
     default=False,
     help='Make a plot of the logarithmic reduction'
 )
-def main(height, size, iters, counter_threshold, video, plot, logs):
+def main(height, size, iters, counter_threshold, video, plot_totals, plot_logs):
     grid = MakeGrid(size)
     snapshots, record = Run(grid, height, iters)
     totals = ProcessRecord(record, counter_threshold)
@@ -163,10 +163,10 @@ def main(height, size, iters, counter_threshold, video, plot, logs):
     if video:
         viz.Video(snapshots, height, fps=15, cmap='Blues', filename='results.mp4')
 
-    if plot:
+    if plot_totals:
         viz.PlotTotals(totals)
 
-    if logs:
+    if plot_logs:
         viz.PlotTotals(logs, 'line')
 
 if __name__ == "__main__":
