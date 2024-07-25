@@ -78,7 +78,7 @@ def Cascade(snapshots, record, grid, height, coord, step):
 
 def Run(grid, height, iters):
     snapshots = []
-    record = { s: 0 for s in range(iters)}
+    record = defaultdict(int)
     for step in range(iters):
         coord = CenterWeightedCoord(grid)
         grid = PlaceGrain(grid, coord)
@@ -88,9 +88,12 @@ def Run(grid, height, iters):
 
 def ProcessRecord(rec, threshold):
     totals = defaultdict(int)
-    for step, cascades in rec.items():
+    for cascades in rec.values():
         if cascades > threshold:
             totals[cascades] += 1
+    # resort it, since defaultdict keeps order, but the smallest cascade isn't
+    # guaranteed to come first:
+    totals = { k:v for k,v in sorted(totals.items()) }
     return totals
 
 def MapToLog(totals):
@@ -100,9 +103,9 @@ def MapToLog(totals):
     return logs
 
 def PowerLawEstimation(logs, powlaw):
-    curve = []
+    curve = {}
     for i in range(len(logs)):
-        curve.append(math.exp(i * powlaw))
+        curve[i] = math.exp(i * powlaw)
     return curve
 
 
@@ -158,7 +161,6 @@ def main(height, size, iters, counter_threshold, video, plot_totals, plot_logs):
     print(f'{totals = }')
     logs = MapToLog(totals)
     print(f'{logs = }')
-    print(f'{PowerLawEstimation(logs, 1/3) = }')
 
     if video:
         viz.Video(snapshots, height, fps=15, cmap='Blues', filename='results.mp4')
@@ -168,6 +170,7 @@ def main(height, size, iters, counter_threshold, video, plot_totals, plot_logs):
 
     if plot_logs:
         viz.PlotTotals(logs, 'line')
+
 
 if __name__ == "__main__":
     main()
