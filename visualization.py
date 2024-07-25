@@ -4,6 +4,21 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
+def PlotShow(plot=None):
+    # special magic for avoiding a blocking call
+    if plot:
+        plt.show(plot, block=False)
+    else:
+        plt.show(block=False)
+    # Pause to allow the input call to run:
+    plt.pause(0.001)
+    input("hit [enter] to end.")
+    plt.close("all")
+
+def PlotTotals(totals):
+    plt.bar(totals.keys(), totals.values())
+    PlotShow()
+
 def Video(snapshots, maxh, fps=1, cmap='Blues', filename='video.mp4'):
     FFMpegWriter = animation.writers['ffmpeg']
     writer = FFMpegWriter(fps)
