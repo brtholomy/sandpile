@@ -1,3 +1,4 @@
+import click
 import copy
 import random
 import struct
@@ -33,8 +34,8 @@ def PlaceGrain(grid, coord):
     grid[coord.x][coord.y] += 1
     return grid
 
-def WillFall(grid, coord):
-    return grid[coord.x][coord.y] > MAXHEIGHT
+def WillFall(grid, height, coord):
+    return grid[coord.x][coord.y] > height
 
 def WithinGrid(grid, coord):
     size = len(grid)
@@ -64,25 +65,26 @@ def GetNeighbors(coord, shape='cross'):
     else:
         return GetNeighborsCross(coord)
 
-def Cascade(snapshots, grid, coord, step):
-    if WillFall(grid, coord):
+def Cascade(snapshots, record, grid, height, coord, step):
+    if WillFall(grid, height, coord):
         grid[coord.x][coord.y] -= 8
-        Record[step] += 1
+        record[step] += 1
         for n in GetNeighbors(coord, 'all'):
             if WithinGrid(grid, n):
                 grid = PlaceGrain(grid, n)
                 snapshots.append(copy.deepcopy(grid))
-                return Cascade(snapshots, grid, n, step)
+                return Cascade(snapshots, record, grid, height, n, step)
     return snapshots, grid
 
-def Run(grid, steps):
+def Run(grid, height, iters):
     snapshots = []
-    for step in range(steps):
+    record = { s: 0 for s in range(iters)}
+    for step in range(iters):
         coord = CenterWeightedCoord(grid)
         grid = PlaceGrain(grid, coord)
-        snapshots, grid = Cascade(snapshots, grid, coord, step)
+        snapshots, grid = Cascade(snapshots, record, grid, height, coord, step)
         snapshots.append(copy.deepcopy(grid))
-    return snapshots
+    return snapshots, record
 
 def ProcessRecord(rec, threshold):
     totals = defaultdict(int)
@@ -103,18 +105,51 @@ def PowerLawEstimation(logs, powlaw):
         curve.append(math.exp(i * powlaw))
     return curve
 
-MAXHEIGHT = 8
-size = 10
-steps = 1000
-counter_threshold = 0
 
-Record = { s: 0 for s in range(steps)}
-grid = MakeGrid(size)
-snapshots = Run(grid, steps)
-totals = ProcessRecord(Record, counter_threshold)
-print(f'{totals = }')
-logs = MapToLog(totals)
-print(f'{logs = }')
-print(f'{PowerLawEstimation(logs, 1/3) = }')
+@click.command()
+@click.option(
+    '--height', '-h',
+    default=4,
+    show_default=True,
+    help='Maximum height of a given site'
+)
+@click.option(
+    '--size', '-s',
+    default=10,
+    show_default=True,
+    help='Number of sites, M, in the MxM lattice'
+)
+@click.option(
+    '--iters', '-i',
+    default=1_000,
+    type=int,
+    show_default=True,
+    help='Number of iterations'
+)
+@click.option(
+    '--counter_threshold', '-c',
+    default=0,
+    type=int,
+    show_default=True,
+    help='Threshold above which the cascade counter should apply'
+)
+@click.option(
+    '--video', '-v',
+    is_flag=True,
+    default=False,
+    help='Record a video of the simulation progression'
+)
+def main(height, size, iters, counter_threshold, video):
+    grid = MakeGrid(size)
+    snapshots, record = Run(grid, height, iters)
+    totals = ProcessRecord(record, counter_threshold)
+    print(f'{totals = }')
+    logs = MapToLog(totals)
+    print(f'{logs = }')
+    print(f'{PowerLawEstimation(logs, 1/3) = }')
 
-viz.Video(snapshots, MAXHEIGHT, fps=15, cmap='Blues', filename='results.mp4')
+    if video:
+        viz.Video(snapshots, height, fps=15, cmap='Blues', filename='results.mp4')
+
+if __name__ == "__main__":
+    main()
