@@ -40,7 +40,7 @@ def WithinGrid(grid, coord):
     size = len(grid)
     return coord.x < size and coord.y < size
 
-def GetNeighbors(coord):
+def GetNeighborsCross(coord):
     return [
         Coord(coord.x + 1, coord.y),
         Coord(coord.x, coord.y + 1),
@@ -48,23 +48,27 @@ def GetNeighbors(coord):
         Coord(coord.x, coord.y - 1),
     ]
 
-def GetNeighbors8(coord):
+def GetNeighborsX(coord):
     return [
-        Coord(coord.x + 1, coord.y),
-        Coord(coord.x, coord.y + 1),
         Coord(coord.x + 1, coord.y + 1),
-        Coord(coord.x - 1, coord.y),
-        Coord(coord.x, coord.y - 1),
         Coord(coord.x - 1, coord.y - 1),
         Coord(coord.x + 1, coord.y - 1),
         Coord(coord.x - 1, coord.y + 1),
     ]
 
+def GetNeighbors(coord, shape='cross'):
+    if shape == 'all':
+        return GetNeighborsCross(coord) + GetNeighborsX(coord)
+    elif shape == 'x':
+        return GetNeighborsX(coord)
+    else:
+        return GetNeighborsCross(coord)
+
 def Cascade(snapshots, grid, coord, step):
     if WillFall(grid, coord):
         grid[coord.x][coord.y] -= 8
         Record[step] += 1
-        for n in GetNeighbors(coord):
+        for n in GetNeighbors(coord, 'all'):
             if WithinGrid(grid, n):
                 grid = PlaceGrain(grid, n)
                 snapshots.append(copy.deepcopy(grid))
