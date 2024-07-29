@@ -21,14 +21,18 @@ def RandomCoord(grid):
     random.seed()
     return Coord(random.randint(0, size), random.randint(0, size))
 
-def CenterWeightedCoord(grid):
+def WeightedCoord(grid, weight):
     size = len(grid) - 1
     random.seed()
-    sample = list(range(size))
-    # weight the center
-    weights = [1 / abs(i - size/2) for i in range(size)]
-    ch = random.choices(sample, weights=weights, k=2)
-    return Coord(ch[0], ch[1])
+    if weight:
+        sample = list(range(size))
+        # weight the center according to a given factor:
+        weights = [1*weight / abs(i - size/2) for i in range(size)]
+        ch = random.choices(sample, weights=weights, k=2)
+        coord = Coord(ch[0], ch[1])
+    else:
+        coord = RandomCoord(grid)
+    return coord
 
 def PlaceGrain(grid, coord):
     grid[coord.x][coord.y] += 1
@@ -76,11 +80,11 @@ def Cascade(snapshots, record, grid, height, coord, step):
                 return Cascade(snapshots, record, grid, height, n, step)
     return snapshots, grid
 
-def Run(grid, height, iters):
+def Run(grid, height, iters, weight):
     snapshots = []
     record = defaultdict(int)
     for step in range(iters):
-        coord = CenterWeightedCoord(grid)
+        coord = WeightedCoord(grid, weight)
         grid = PlaceGrain(grid, coord)
         snapshots, grid = Cascade(snapshots, record, grid, height, coord, step)
         snapshots.append(copy.deepcopy(grid))
@@ -154,9 +158,16 @@ def PowerLawEstimation(logs, powlaw):
     default=False,
     help='Make a plot of the logarithmic reduction'
 )
-def main(height, size, iters, counter_threshold, video, plot_totals, plot_logs):
+@click.option(
+    '--center_weight', '-w',
+    default=0,
+    type=int,
+    show_default=True,
+    help='weight the center by the given factor. default is random placement'
+)
+def main(height, size, iters, counter_threshold, video, plot_totals, plot_logs, center_weight):
     grid = MakeGrid(size)
-    snapshots, record = Run(grid, height, iters)
+    snapshots, record = Run(grid, height, iters, center_weight)
     totals = ProcessRecord(record, counter_threshold)
     print(f'{totals = }')
     logs = MapToLog(totals)
