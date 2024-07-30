@@ -5,6 +5,7 @@ import struct
 from dataclasses import dataclass
 from collections import defaultdict
 import math
+import pickle
 
 import visualization as viz
 
@@ -161,12 +162,30 @@ def PowerLawEstimation(logs, powlaw):
 @click.option(
     '--center_weight', '-w',
     default=0,
-    type=int,
+    type=float,
     show_default=True,
     help='weight the center by the given factor. default is random placement'
 )
-def main(height, size, iters, counter_threshold, video, plot_totals, plot_logs, center_weight):
-    grid = MakeGrid(size)
+@click.option(
+    '--seed',
+    is_flag=True,
+    default=False,
+    help='Load a previously saved grid as seed'
+)
+@click.option(
+    '--save',
+    is_flag=True,
+    default=False,
+    help='Save the last frame of this run for a seed, as grid.pkl'
+)
+def main(height, size, iters, counter_threshold, video, plot_totals, plot_logs,
+         center_weight, seed, save):
+    if seed:
+        with open('grid.pkl', 'rb') as f:
+            grid = pickle.load(f)
+    else:
+        grid = MakeGrid(size)
+
     snapshots, record = Run(grid, height, iters, center_weight)
     totals = ProcessRecord(record, counter_threshold)
     print(f'{totals = }')
@@ -181,6 +200,10 @@ def main(height, size, iters, counter_threshold, video, plot_totals, plot_logs, 
 
     if plot_logs:
         viz.PlotTotals(logs, 'line')
+
+    if save:
+        with open('grid.pkl', 'wb') as f:
+            pickle.dump(grid, f)
 
 
 if __name__ == "__main__":
